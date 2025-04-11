@@ -18,14 +18,14 @@ body {
 }
 
 h1 {
-    color: #ff69b4; /* HotPink */
+    color: #007bff; /* Primary Blue */
     margin-bottom: 30px;
 }
 
 #buzzer-status {
     margin-bottom: 30px;
     padding: 15px;
-    background-color: #ffe4e1; /* MistyRose */
+    background-color: #e7f1ff; /* Light Accent Blue */
     border-radius: 8px;
     min-height: 50px; /* Ensure space even when empty */
     display: flex;
@@ -50,18 +50,18 @@ button {
 }
 
 #buzz-button {
-    background-color: #ff1493; /* DeepPink */
+    background-color: #007bff; /* Primary Blue */
     color: white;
-    box-shadow: 0 5px #c71585; /* MediumVioletRed */
+    box-shadow: 0 5px #0056b3; /* Darker Primary Blue */
 }
 
 #buzz-button:hover {
-    background-color: #ff69b4; /* HotPink */
+    background-color: #0069d9; /* Lighter Primary Blue */
 }
 
 #buzz-button:active {
     transform: translateY(3px);
-    box-shadow: 0 2px #c71585;
+    box-shadow: 0 2px #0056b3; /* Darker Primary Blue */
 }
 
 #buzz-button:disabled {
@@ -72,16 +72,16 @@ button {
 }
 
 #reset-button {
-    background-color: #add8e6; /* LightBlue */
-    color: #333;
-    box-shadow: 0 5px #87ceeb; /* SkyBlue */
+    background-color: #5bc0de; /* Secondary Blue */
+    color: white; /* Change text to white for better contrast */
+    box-shadow: 0 5px #31b0d5; /* Darker Secondary Blue */
 }
 
 #reset-button:hover {
-    background-color: #b0e0e6; /* PowderBlue */
+    background-color: #70c7e0; /* Lighter Secondary Blue */
 }
 
 #reset-button:active {
     transform: translateY(3px);
-    box-shadow: 0 2px #87ceeb;
+    box-shadow: 0 2px #31b0d5; /* Darker Secondary Blue */
 }

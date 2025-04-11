@@ -83,22 +83,33 @@
         };
 
         function updateUI(state) {
-            // Update ranking list (similar to player view, but no highlighting needed)
-            rankingList.innerHTML = '';
-            if (state.buzz_order && state.buzz_order.length > 0) {
+            rankingList.innerHTML = ''; // Clear previous list
+
+            // Use the new buzz_details field which includes names and deltas
+            if (state.buzz_details && state.buzz_details.length > 0) {
                 statusMessage.style.display = 'none';
                 rankingList.style.display = 'block';
-                state.buzz_order.forEach((player, index) => {
+
+                state.buzz_details.forEach((detail, index) => {
                     const rank = index + 1;
                     const listItem = document.createElement('li');
                     let suffix = " ";
                     if (rank === 1) suffix = "🥇";
                     else if (rank === 2) suffix = "🥈";
                     else if (rank === 3) suffix = "🥉";
-                    listItem.textContent = `${player} ${suffix}`; // Removed rank number
+
+                    let timeDiffText = "";
+                    // Display delta time for players after the first one
+                    if (detail.delta !== null && detail.delta !== undefined) {
+                        // Format to 2 decimal places and add 's' for seconds
+                        timeDiffText = ` (+${detail.delta.toFixed(2)} ث)`; // "s" for seconds in Arabic
+                    }
+
+                    listItem.textContent = `${detail.name}${suffix}${timeDiffText}`;
                     rankingList.appendChild(listItem);
                 });
-                 resetButton.style.display = 'inline-block'; // Show reset button for admin
+
+                resetButton.style.display = 'inline-block'; // Show reset button if there are buzzes
             } else {
                 // No one has buzzed yet (reset state)
                 statusMessage.textContent = '🔔 بانتظار أول ضغطة من اللاعبين! 🔔'; // Waiting for first player buzz!
@@ -106,8 +117,7 @@
                 rankingList.style.display = 'none';
                 resetButton.style.display = 'none'; // Hide reset button if no one buzzed
             }
-            // Note: Admin doesn't need can_buzz or round_active directly from state
-            // as reset button visibility is handled based on buzz_order length.
+            // Reset button visibility is now correctly handled based on buzz_details length.
         }
 
         // Initial connection attempt

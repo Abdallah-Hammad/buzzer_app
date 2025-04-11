@@ -62,23 +62,34 @@ class ConnectionManager:
     def _get_state_message(self, websocket: WebSocket) -> dict:
         """Helper to create the state message based on client role."""
         client_id, role = self.get_client_info(websocket)
-        ordered_buzzers = [cid for cid, ts in self.buzz_order]
         rank = None
         can_buzz = False
+        buzz_details = []
+        ordered_buzzers_names = []
+
+        if self.buzz_order:
+            # Calculate deltas and prepare detailed list
+            buzz_details.append({'name': self.buzz_order[0][0], 'delta': None}) # First buzzer has no delta
+            ordered_buzzers_names.append(self.buzz_order[0][0])
+            for i in range(1, len(self.buzz_order)):
+                delta = self.buzz_order[i][1] - self.buzz_order[i-1][1]
+                buzz_details.append({'name': self.buzz_order[i][0], 'delta': round(delta, 2)})
+                ordered_buzzers_names.append(self.buzz_order[i][0])
 
         if role == "player":
             try:
-                # Find rank (1-based index) for players
-                rank = ordered_buzzers.index(client_id) + 1
+                # Find rank (1-based index) for players using the names list
+                rank = ordered_buzzers_names.index(client_id) + 1
             except ValueError:
                 rank = None # This player hasn't buzzed yet
             # Player can buzz if they haven't buzzed this round
             can_buzz = websocket not in self.buzzed_clients
 
         return {
-            "buzz_order": ordered_buzzers,
-            "your_rank": rank, # Will be None for admin or unbuzzed players
-            "can_buzz": can_buzz, # Will be False for admin or buzzed players
+            "buzz_order": ordered_buzzers_names, # Keep for player view compatibility
+            "buzz_details": buzz_details,       # New field for admin view with deltas
+            "your_rank": rank,
+            "can_buzz": can_buzz,
             "round_active": len(self.buzz_order) > 0 # Is the reset button needed? (Used by admin)
         }
 

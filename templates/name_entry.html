@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدخال الاسم - لعبة الجرس</title> <!-- Enter Name - Buzzer Game -->
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .container { max-width: 400px; }
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #add8e6; /* LightBlue */
+            border-radius: 5px;
+            font-size: 1.1em;
+        }
+        button {
+            background-color: #ff69b4; /* HotPink */
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>أدخل اسمك للمشاركة</h1> <!-- Enter your name to participate -->
+        <form id="name-form">
+            <input type="text" id="player-name" placeholder="اسم اللاعب" required autocomplete="off"> <!-- Player Name -->
+            <button type="submit">دخول اللعبة</button> <!-- Enter Game -->
+        </form>
+    </div>
+
+    <script>
+        const nameForm = document.getElementById('name-form');
+        const nameInput = document.getElementById('player-name');
+
+        nameForm.onsubmit = function(event) {
+            event.preventDefault(); // Prevent actual form submission
+            const playerName = nameInput.value.trim();
+            if (playerName) {
+                // Store the name in localStorage
+                localStorage.setItem('buzzerPlayerName', playerName);
+                // Redirect to the main buzzer page
+                window.location.href = '/';
+            } else {
+                alert('الرجاء إدخال اسم!'); // Please enter a name!
+            }
+        };
+
+        // Optional: Pre-fill if name already exists in localStorage
+        const existingName = localStorage.getItem('buzzerPlayerName');
+        if (existingName) {
+            nameInput.value = existingName;
+        }
+    </script>
+</body>
+</html>

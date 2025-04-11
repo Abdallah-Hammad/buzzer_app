@@ -1,0 +1,87 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f8ff; /* AliceBlue */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    direction: rtl; /* Right-to-left for Arabic */
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+h1 {
+    color: #ff69b4; /* HotPink */
+    margin-bottom: 30px;
+}
+
+#buzzer-status {
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #ffe4e1; /* MistyRose */
+    border-radius: 8px;
+    min-height: 50px; /* Ensure space even when empty */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#winner-message {
+    font-size: 1.2em;
+    color: #333;
+    margin: 0;
+}
+
+button {
+    padding: 15px 30px;
+    font-size: 1.5em;
+    cursor: pointer;
+    border: none;
+    border-radius: 50px; /* Make it round */
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    margin: 10px;
+}
+
+#buzz-button {
+    background-color: #ff1493; /* DeepPink */
+    color: white;
+    box-shadow: 0 5px #c71585; /* MediumVioletRed */
+}
+
+#buzz-button:hover {
+    background-color: #ff69b4; /* HotPink */
+}
+
+#buzz-button:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px #c71585;
+}
+
+#buzz-button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+    box-shadow: 0 5px #aaaaaa;
+}
+
+#reset-button {
+    background-color: #add8e6; /* LightBlue */
+    color: #333;
+    box-shadow: 0 5px #87ceeb; /* SkyBlue */
+}
+
+#reset-button:hover {
+    background-color: #b0e0e6; /* PowderBlue */
+}
+
+#reset-button:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px #87ceeb;
+}

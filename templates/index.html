@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الجرس</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>لعبة الجرس</h1>
+        <div id="buzzer-status">
+            <p id="status-message">🔔 بانتظار أول ضغطة! 🔔</p> <!-- Waiting for the first buzz! -->
+            <ol id="ranking-list"></ol> <!-- Ordered list for rankings -->
+        </div>
+        <button id="buzz-button">اضغط للجرس!</button> <!-- Press to Buzz! -->
+        <!-- Reset button removed for players -->
+    </div>
+
+    <script>
+        const playerName = localStorage.getItem('buzzerPlayerName');
+
+        // Redirect to name entry if no name is found
+        if (!playerName) {
+            window.location.replace('/enter_name'); // Use replace to avoid back button issues
+        }
+
+        const buzzButton = document.getElementById('buzz-button');
+        // const resetButton = document.getElementById('reset-button'); // Removed
+        const statusMessage = document.getElementById('status-message');
+        const rankingList = document.getElementById('ranking-list');
+        let ws = null;
+
+        function connectWebSocket(name) {
+             if (!name) {
+                console.error("Player name is missing, cannot connect.");
+                statusMessage.textContent = "خطأ: اسم اللاعب مفقود!"; // Error: Player name missing!
+                // Redirect again just in case
+                setTimeout(() => window.location.replace('/enter_name'), 2000);
+                return;
+            }
+            // Use ws:// or wss:// depending on the page protocol
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            // Send name as query parameter, properly encoded
+            const encodedName = encodeURIComponent(name);
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws?role=player&name=${encodedName}`;
+            console.log(`Connecting WebSocket with URL: ${wsUrl}`);
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function(event) {
+                console.log("WebSocket connection established");
+                // Optional: Send a message upon connection if needed
+            };
+
+            ws.onmessage = function(event) {
+                console.log("Message from server: ", event.data);
+                try {
+                    const state = JSON.parse(event.data);
+                    updateUI(state);
+                } catch (e) {
+                    console.error("Failed to parse message or invalid data format:", e);
+                    statusMessage.textContent = 'خطأ في البيانات المستلمة!'; // Error in received data!
+                }
+            };
+
+            ws.onerror = function(event) {
+                console.error("WebSocket error observed:", event);
+                statusMessage.textContent = 'حدث خطأ في الاتصال!'; // Connection error!
+            };
+
+            ws.onclose = function(event) {
+                console.log("WebSocket connection closed. Attempting to reconnect...");
+                statusMessage.textContent = 'انقطع الاتصال. جاري إعادة المحاولة...'; // Connection lost. Retrying...
+                // Attempt to reconnect after a delay
+                // Pass player name for reconnection attempts
+                setTimeout(() => connectWebSocket(playerName), 5000);
+            };
+        }
+
+        buzzButton.onclick = function() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                console.log("Sending buzz action");
+                ws.send(JSON.stringify({ action: 'buzz' }));
+                // Optimistically disable button, server state will confirm
+                // buzzButton.disabled = true;
+            } else {
+                console.error("WebSocket is not connected.");
+                statusMessage.textContent = 'لا يوجد اتصال بالخادم!'; // Not connected to server!
+            }
+        };
+
+        // Reset button handler removed
+        function updateUI(state) {
+            // Update ranking list
+            rankingList.innerHTML = ''; // Clear previous list
+            if (state.buzz_order && state.buzz_order.length > 0) {
+                statusMessage.style.display = 'none'; // Hide initial message
+                rankingList.style.display = 'block';
+                state.buzz_order.forEach((player, index) => {
+                    const rank = index + 1;
+                    const listItem = document.createElement('li');
+                    let suffix = " ";
+                    if (rank === 1) suffix = "🥇";
+                    else if (rank === 2) suffix = "🥈";
+                    else if (rank === 3) suffix = "🥉";
+                    listItem.textContent = `${player} ${suffix}`; // Removed rank number
+                    // Highlight the current user's rank
+                    if (state.your_rank === rank) {
+                         listItem.style.fontWeight = 'bold';
+                         listItem.style.color = '#ff1493'; // DeepPink highlight
+                         listItem.textContent += " (أنت)"; // (You)
+                    }
+                    rankingList.appendChild(listItem);
+                });
+            } else {
+                // No one has buzzed yet (reset state)
+                statusMessage.textContent = '🔔 بانتظار أول ضغطة! 🔔';
+                statusMessage.style.display = 'block';
+                rankingList.style.display = 'none';
+            }
+
+            // Update button states
+            buzzButton.disabled = !state.can_buzz;
+            // Reset button display update removed
+        }
+
+        // Initial connection attempt only if playerName exists
+        if (playerName) {
+            document.querySelector('h1').textContent += ` - ${playerName}`; // Add name to title
+            connectWebSocket(playerName);
+        }
+    </script>
+</body>
+</html>

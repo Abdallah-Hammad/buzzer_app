@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم لعبة الجرس</title> <!-- Buzzer Game Control Panel -->
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        /* Add specific styles for admin page if needed */
+        body { background-color: #e0ffff; } /* LightCyan background for admin */
+        .container { border: 2px solid #ff69b4; }
+        #admin-title { color: #008b8b; } /* DarkCyan */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="admin-title">لوحة التحكم</h1> <!-- Control Panel -->
+        <div id="buzzer-status">
+            <p id="status-message">⏳ بانتظار اتصال اللاعبين...</p> <!-- Waiting for players to connect... -->
+            <ol id="ranking-list" style="display: none;"></ol> <!-- Ordered list for rankings -->
+        </div>
+        <button id="reset-button" style="display: none;">إعادة تعيين الجرس</button> <!-- Reset Buzzer -->
+        <p id="connection-status" style="margin-top: 20px; color: grey;">جاري الاتصال...</p> <!-- Connecting... -->
+    </div>
+
+    <script>
+        const resetButton = document.getElementById('reset-button');
+        const statusMessage = document.getElementById('status-message');
+        const rankingList = document.getElementById('ranking-list');
+        const connectionStatus = document.getElementById('connection-status');
+        let ws = null;
+
+        function connectWebSocket() {
+            connectionStatus.textContent = 'جاري الاتصال...';
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            // Connect with role=admin query parameter
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws?role=admin`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function(event) {
+                console.log("Admin WebSocket connection established");
+                connectionStatus.textContent = '✅ متصل'; // Connected
+                connectionStatus.style.color = 'green';
+            };
+
+            ws.onmessage = function(event) {
+                console.log("Admin received message: ", event.data);
+                try {
+                    // Admin uses the same state message structure
+                    const state = JSON.parse(event.data);
+                    updateUI(state);
+                } catch (e) {
+                    console.error("Admin failed to parse message:", e);
+                    statusMessage.textContent = 'خطأ في البيانات المستلمة!';
+                }
+            };
+
+            ws.onerror = function(event) {
+                console.error("Admin WebSocket error:", event);
+                statusMessage.textContent = 'حدث خطأ في الاتصال!';
+                connectionStatus.textContent = '❌ خطأ في الاتصال';
+                connectionStatus.style.color = 'red';
+            };
+
+            ws.onclose = function(event) {
+                console.log("Admin WebSocket closed. Reconnecting...");
+                statusMessage.textContent = 'انقطع الاتصال!';
+                connectionStatus.textContent = '🔄 جاري إعادة المحاولة...';
+                connectionStatus.style.color = 'orange';
+                ws = null; // Ensure ws is null so button clicks fail until reconnected
+                setTimeout(connectWebSocket, 5000);
+            };
+        }
+
+        resetButton.onclick = function() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                console.log("Admin sending reset action");
+                ws.send(JSON.stringify({ action: 'reset' }));
+            } else {
+                console.error("Admin WebSocket is not connected.");
+                statusMessage.textContent = 'لا يوجد اتصال بالخادم!';
+            }
+        };
+
+        function updateUI(state) {
+            // Update ranking list (similar to player view, but no highlighting needed)
+            rankingList.innerHTML = '';
+            if (state.buzz_order && state.buzz_order.length > 0) {
+                statusMessage.style.display = 'none';
+                rankingList.style.display = 'block';
+                state.buzz_order.forEach((player, index) => {
+                    const rank = index + 1;
+                    const listItem = document.createElement('li');
+                    let suffix = " ";
+                    if (rank === 1) suffix = "🥇";
+                    else if (rank === 2) suffix = "🥈";
+                    else if (rank === 3) suffix = "🥉";
+                    listItem.textContent = `${player} ${suffix}`; // Removed rank number
+                    rankingList.appendChild(listItem);
+                });
+                 resetButton.style.display = 'inline-block'; // Show reset button for admin
+            } else {
+                // No one has buzzed yet (reset state)
+                statusMessage.textContent = '🔔 بانتظار أول ضغطة من اللاعبين! 🔔'; // Waiting for first player buzz!
+                statusMessage.style.display = 'block';
+                rankingList.style.display = 'none';
+                resetButton.style.display = 'none'; // Hide reset button if no one buzzed
+            }
+            // Note: Admin doesn't need can_buzz or round_active directly from state
+            // as reset button visibility is handled based on buzz_order length.
+        }
+
+        // Initial connection attempt
+        connectWebSocket();
+    </script>
+</body>
+</html>

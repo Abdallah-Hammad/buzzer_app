@@ -26,8 +26,8 @@ class ConnectionManager:
         # Store websocket: (client_id, role)
         self.active_connections: Dict[WebSocket, Tuple[str, Literal["player", "admin"]]] = {}
         self.buzz_order: List[Tuple[str, float]] = [] # Store (client_id, timestamp)
-        self.buzzed_clients: Set[WebSocket] = set() # Players who buzzed this round
-        # No longer need next_player_id
+        self.buzzed_clients: Set[WebSocket] = set() # DEPRECATED - Use buzzed_player_names instead for logic
+        self.buzzed_player_names: Set[str] = set() # Players (by name) who buzzed this round
         self.admin_count = 0
 
     def get_client_info(self, websocket: WebSocket) -> Tuple[str, Literal["player", "admin"]]:
@@ -48,7 +48,7 @@ class ConnectionManager:
 
         self.active_connections[websocket] = (client_id, role)
         logger.info(f"{client_id} ({role}) connected. Total clients: {len(self.active_connections)}")
-        # Send current state to the newly connected client
+        # Send current state to the newly connected client (will now correctly reflect if they already buzzed)
         await self.send_state(websocket)
 
     def disconnect(self, websocket: WebSocket):
@@ -82,8 +82,8 @@ class ConnectionManager:
                 rank = ordered_buzzers_names.index(client_id) + 1
             except ValueError:
                 rank = None # This player hasn't buzzed yet
-            # Player can buzz if they haven't buzzed this round
-            can_buzz = websocket not in self.buzzed_clients
+            # Player can buzz if their NAME is not in the set of buzzed players for this round
+            can_buzz = client_id not in self.buzzed_player_names
 
         return {
             "buzz_order": ordered_buzzers_names, # Keep for player view compatibility
@@ -130,10 +130,12 @@ class ConnectionManager:
             logger.warning(f"Admin ({client_id}) attempted to buzz. Ignored.")
             return False
 
-        if websocket not in self.buzzed_clients:
+        # Check if the PLAYER NAME has already buzzed this round
+        if client_id not in self.buzzed_player_names:
             timestamp = time.time()
             self.buzz_order.append((client_id, timestamp))
-            self.buzzed_clients.add(websocket)
+            self.buzzed_player_names.add(client_id) # Add name to the set
+            # self.buzzed_clients.add(websocket) # No longer needed for core logic
             logger.info(f"Buzz recorded for {client_id}. Rank: {len(self.buzz_order)}")
             return True
         else:
@@ -147,9 +149,10 @@ class ConnectionManager:
             logger.warning(f"Player ({client_id}) attempted to reset. Denied.")
             return False
 
-        if self.buzz_order or self.buzzed_clients: # Only reset if needed
+        if self.buzz_order or self.buzzed_player_names: # Check buzzed_player_names as well
             self.buzz_order = []
-            self.buzzed_clients = set()
+            self.buzzed_player_names = set() # Clear the set of names
+            # self.buzzed_clients = set() # No longer needed for core logic
             logger.info(f"Buzzer reset by Admin ({client_id})")
             return True
         logger.info(f"Admin ({client_id}) attempted reset, but already reset.")
